@@ -264,7 +264,7 @@ get_string (const gchar *data, guint32 offset, guint32 index, gboolean swapped)
         return data + s_offset;
 }
 
-static gchar *
+static const gchar *
 get_translation (MoFile *self,
                  const gchar *trans)
 {
@@ -317,19 +317,17 @@ mo_file_get_translation (MoFile *self, const gchar *str)
 
         gboolean found;
 
-        gchar *trans;
+        const gchar *trans;
 
         found = g_hash_table_lookup_extended (self->translations_cache,
                                               str,
                                               NULL,
                                               (gpointer) &trans);
 
-        if (found)
-                return trans;
-
-        trans = get_translation (self, str);
-
-        g_hash_table_insert (self->translations_cache, g_strdup (str), trans);
+        if (!found) {
+                trans = get_translation (self, str);
+                g_hash_table_insert (self->translations_cache, g_strdup (str), (gchar *) trans);
+        }
 
         return g_strdup (trans);
 }
