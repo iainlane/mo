@@ -28,8 +28,6 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-#define GET_PRIVATE(x) (x)->priv;
-
 typedef struct {
         guint32 magic;
         guint32 revision;
