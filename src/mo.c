@@ -329,17 +329,3 @@ mo_file_get_translation (MoFile *self, const gchar *str)
 
         return g_strdup (trans);
 }
-
-int
-main (int argc,
-      char *argv[])
-{
-        MoFile *mofile = mo_file_new ("/usr/share/locale-langpack/fr/LC_MESSAGES/apt.mo");
-
-        g_autofree gchar *trans = mo_file_get_translation (mofile,
-                                                           "edit the source information file");
-
-        g_printf ("%s\n", trans);
-
-        g_object_unref (mofile);
-}
