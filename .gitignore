@@ -31,3 +31,34 @@
 # Debug files
 *.dSYM/
 *.su
+
+# autotools
+
+*~
+aclocal.m4
+autom4te.cache
+autoscan-*.log
+autoscan.log
+compile
+config.guess
+config.h
+config.h.in
+config.log
+config.status
+config.sub
+configure
+configure.scan
+depcomp
+.deps
+.dirstamp
+install-sh
+.libs
+libtool
+ltmain.sh
+m4
+Makefile.in
+missing
+stamp-h1
+
+# built files
+example/sample-query
