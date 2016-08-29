@@ -6,5 +6,5 @@ all: sample-query
 clean:
 	rm sample-query
 
-sample-query: src/mo.c src/mo.h example/sample-query.c
+sample-query: src/mo.c example/sample-query.c
 	gcc -Wall -Wpedantic -pedantic -Wextra -I$(CURDIR)/src $(GLIB_CFLAGS) $^ -o $@ $(GLIB_LIBS)
