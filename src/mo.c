@@ -22,6 +22,7 @@
 
 #include "mo.h"
 
+#include <errno.h>
 #include <fcntl.h>
 #include <string.h>
 #include <sys/mman.h>
@@ -148,6 +149,7 @@ mo_file_initable_init_real (GInitable *init,
                             GCancellable *cancellable G_GNUC_UNUSED,
                             GError **error G_GNUC_UNUSED)
 {
+        /* XXX set the error, but how do we get it from _set_name? */
         MoFile *mofile;
 
         mofile = MO_FILE (init);
@@ -202,14 +204,48 @@ read_mo_file (MoFile *self, GError **error)
         int fd;
         struct stat sb;
 
-        /* XXX */
         fd = open (self->filename, O_RDONLY);
 
-        /* XXX */
-        fstat (fd, &sb);
+        if ((fd = open (self->filename, O_RDONLY)) < 0) {
+                g_set_error (error,
+                             MO_FILE_ERROR,
+                             MO_FILE_INVALID_FILE_ERROR,
+                             "'%s' could not be opened: '%s'.", self->filename, strerror (errno),
+                             NULL);
+                goto fail;
+        }
+
+        if (fstat (fd, &sb) < 0) {
+                g_set_error (error,
+                             MO_FILE_ERROR,
+                             MO_FILE_INVALID_FILE_ERROR,
+                             "'%s' could not be statted: '%s'.", self->filename, strerror (errno),
+                             NULL);
+                goto fail;
+        }
+
+
+        if ((size_t) sb.st_size < sizeof (MoFileHeader)) {
+                g_set_error (error,
+                             MO_FILE_ERROR,
+                             MO_FILE_INVALID_FILE_ERROR,
+                             "'%s' doesn't contain a valid header, cannot read.", self->filename,
+                             NULL);
+                goto fail;
+        }
+
         self->length = sb.st_size;
 
-        self->mmapped_file = mmap (NULL, self->length, PROT_READ, MAP_PRIVATE, fd, 0);
+        if ((self->mmapped_file = mmap (NULL, self->length, PROT_READ, MAP_PRIVATE, fd, 0)) < 0) {
+                g_set_error (error,
+                             MO_FILE_ERROR,
+                             MO_FILE_INVALID_FILE_ERROR,
+                             "Couldn't mmap '%s': '%s'", self->filename, strerror (errno),
+                             NULL);
+                goto fail;
+        }
+
+        close (fd);
 
         memcpy (&self->header, self->mmapped_file, sizeof (MoFileHeader));
 
@@ -219,17 +255,28 @@ read_mo_file (MoFile *self, GError **error)
                              MO_FILE_INVALID_FILE_ERROR,
                              "'%s' doesn't contain a hash table, cannot read.", self->filename,
                              NULL);
-                return FALSE;
+                goto fail;
         }
 
-        if (self->header.magic == 0x950412de)
+        if (self->header.magic == 0x950412de) {
                 self->swapped = FALSE;
-        else if (self->header.magic == 0xde120495)
+        } else if (self->header.magic == 0xde120495) {
                 self->swapped = TRUE;
-        else
-                g_assert_not_reached ();
+        } else {
+                g_set_error (error,
+                             MO_FILE_ERROR,
+                             MO_FILE_INVALID_FILE_ERROR,
+                             "'%s' contains unrecognisable magic bits, cannot read.", self->filename,
+                             NULL);
+                goto fail;
+        }
 
         return TRUE;
+
+fail:
+        memset (&self->header, 0, sizeof (MoFileHeader));
+        return FALSE;
+
 }
 
 gboolean
@@ -240,7 +287,8 @@ mo_file_set_name (MoFile *self, const gchar *filename, GError **error)
 
         if (self->filename != filename) {
                 clear_file (self);
-                if (!g_file_test (filename, G_FILE_TEST_EXISTS)) {
+                if (!g_file_test (filename, G_FILE_TEST_EXISTS) ||
+                    !g_file_test (filename, G_FILE_TEST_IS_REGULAR)) {
                         g_set_error (error,
                                      MO_FILE_ERROR,
                                      MO_FILE_NO_SUCH_FILE_ERROR,
@@ -370,7 +418,7 @@ get_translation (MoFile *self,
 gchar *
 mo_file_get_translation (MoFile *self, const gchar *str)
 {
-        if (!MO_IS_FILE (self) || !str || !self->filename)
+        if (!MO_IS_FILE (self) || !str || !self->filename || self->header.nstrings == 0)
                 return NULL;
 
         gboolean found;
