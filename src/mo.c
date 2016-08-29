@@ -236,7 +236,7 @@ read_mo_file (MoFile *self, GError **error)
 
         self->length = sb.st_size;
 
-        if ((self->mmapped_file = mmap (NULL, self->length, PROT_READ, MAP_PRIVATE, fd, 0)) < 0) {
+        if ((self->mmapped_file = mmap (NULL, self->length, PROT_READ, MAP_PRIVATE, fd, 0)) == MAP_FAILED) {
                 g_set_error (error,
                              MO_FILE_ERROR,
                              MO_FILE_INVALID_FILE_ERROR,
