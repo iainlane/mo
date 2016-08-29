@@ -22,16 +22,24 @@
 
 #pragma once
 
+#include <gio/gio.h>
 #include <glib-object.h>
 
 G_BEGIN_DECLS
+
+typedef enum {
+        MO_FILE_INVALID_FILE_ERROR,
+        MO_FILE_NO_SUCH_FILE_ERROR,
+} MoFileError;
 
 #define MO_TYPE_FILE mo_file_get_type ()
 
 G_DECLARE_FINAL_TYPE (MoFile, mo_file, MO, FILE, GObject)
 
+#define MO_FILE_ERROR mo_file_error_quark ()
+
 MoFile *mo_file_new (const gchar *filename);
-void mo_file_set_name (MoFile *self, const gchar *filename);
+gboolean mo_file_set_name (MoFile *self, const gchar *filename, GError **error);
 const gchar *mo_file_get_name (MoFile *self);
 
 gchar *mo_file_get_translation (MoFile *self, const gchar *str);

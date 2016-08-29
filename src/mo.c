@@ -45,7 +45,7 @@ struct _MoFile {
         GHashTable *translations_cache;
         MoFileHeader header;
         gboolean swapped;
-        char *mmaped_file;
+        char *mmapped_file;
         off_t length;
 };
 
@@ -56,7 +56,18 @@ enum {
 
 static GParamSpec *obj_properties[N_PROPERTIES] = { NULL, };
 
-G_DEFINE_TYPE (MoFile, mo_file, G_TYPE_OBJECT)
+/* forward declaration */
+static void mo_file_initable_init (GInitableIface *iface);
+
+G_DEFINE_TYPE_WITH_CODE (MoFile, mo_file, G_TYPE_OBJECT,
+                         G_IMPLEMENT_INTERFACE (G_TYPE_INITABLE,
+                                                mo_file_initable_init))
+
+GQuark
+mo_file_error_quark ()
+{
+        return g_quark_from_static_string ("mo-file-error-quark");
+}
 
 static void
 mo_file_get_property (GObject    *object,
@@ -90,7 +101,8 @@ mo_file_set_property (GObject      *object,
     {
         case PROP_FILENAME:
             mo_file_set_name (self,
-                              (gchar *) g_value_get_string (value));
+                              (gchar *) g_value_get_string (value),
+                              NULL);
             break;
 
         default:
@@ -102,9 +114,12 @@ mo_file_set_property (GObject      *object,
 static void
 clear_file (MoFile *self)
 {
-        if (self->mmaped_file) {
-                munmap (self->mmaped_file, self->length);
-                self->mmaped_file = NULL;
+        g_return_if_fail (MO_IS_FILE (self));
+
+        if (self->mmapped_file) {
+                munmap (self->mmapped_file, self->length);
+                memset (&self->header, 0, sizeof (MoFileHeader));
+                self->mmapped_file = NULL;
         }
 
         g_free (self->filename);
@@ -115,8 +130,6 @@ clear_file (MoFile *self)
 static void
 mo_file_dispose (GObject *object)
 {
-        MoFile *self G_GNUC_UNUSED = MO_FILE (object);
-
         G_OBJECT_CLASS (mo_file_parent_class)->dispose (object);
 }
 
@@ -128,6 +141,24 @@ mo_file_finalize (GObject *object)
         clear_file (self);
 
         G_OBJECT_CLASS (mo_file_parent_class)->finalize (object);
+}
+
+static gboolean
+mo_file_initable_init_real (GInitable *init,
+                            GCancellable *cancellable G_GNUC_UNUSED,
+                            GError **error G_GNUC_UNUSED)
+{
+        MoFile *mofile;
+
+        mofile = MO_FILE (init);
+
+        return mofile->filename != NULL;
+}
+
+static void
+mo_file_initable_init (GInitableIface *iface)
+{
+        iface->init = mo_file_initable_init_real;
 }
 
 static void
@@ -145,7 +176,9 @@ mo_file_class_init (MoFileClass *klass)
                                      "Filename",
                                      "Name of the .mo file to load.",
                                      NULL  /* default value */,
-                                     G_PARAM_CONSTRUCT | G_PARAM_READWRITE);
+                                     G_PARAM_CONSTRUCT |
+                                     G_PARAM_READWRITE |
+                                     G_PARAM_STATIC_STRINGS);
 
         g_object_class_install_properties (object_class,
                                            N_PROPERTIES,
@@ -155,23 +188,17 @@ mo_file_class_init (MoFileClass *klass)
 static void
 mo_file_init (MoFile *self)
 {
-        self->translations_cache = g_hash_table_new_full (g_str_hash,
-                                                          g_str_equal,
+        self->translations_cache = g_hash_table_new_full (g_str_hash /* owned */,
+                                                          g_str_equal /* pointer to the mmapped file */,
                                                           g_free,
                                                           NULL);
 }
 
-MoFile *
-mo_file_new (const gchar *filename)
+static gboolean
+read_mo_file (MoFile *self, GError **error)
 {
-        return MO_FILE (g_object_new (MO_TYPE_FILE,
-                                      "filename", filename,
-                                      NULL));
-}
+        g_return_val_if_fail (MO_IS_FILE (self), FALSE);
 
-static void
-read_mo_file (MoFile *self)
-{
         int fd;
         struct stat sb;
 
@@ -182,11 +209,18 @@ read_mo_file (MoFile *self)
         fstat (fd, &sb);
         self->length = sb.st_size;
 
-        self->mmaped_file = mmap (NULL, self->length, PROT_READ, MAP_PRIVATE, fd, 0);
+        self->mmapped_file = mmap (NULL, self->length, PROT_READ, MAP_PRIVATE, fd, 0);
 
-        //close (fd);
+        memcpy (&self->header, self->mmapped_file, sizeof (MoFileHeader));
 
-        memcpy (&self->header, self->mmaped_file, sizeof (MoFileHeader));
+        if (self->header.hash_tab_offset == 0) {
+                g_set_error (error,
+                             MO_FILE_ERROR,
+                             MO_FILE_INVALID_FILE_ERROR,
+                             "'%s' doesn't contain a hash table, cannot read.", self->filename,
+                             NULL);
+                return FALSE;
+        }
 
         if (self->header.magic == 0x950412de)
                 self->swapped = FALSE;
@@ -194,27 +228,43 @@ read_mo_file (MoFile *self)
                 self->swapped = TRUE;
         else
                 g_assert_not_reached ();
+
+        return TRUE;
 }
 
-void
-mo_file_set_name (MoFile *self, const gchar *filename)
+gboolean
+mo_file_set_name (MoFile *self, const gchar *filename, GError **error)
 {
-        g_return_if_fail (MO_IS_FILE (self));
-        g_return_if_fail (filename != NULL);
+        if (!MO_IS_FILE (self) || !filename)
+                return FALSE;
 
         if (self->filename != filename) {
                 clear_file (self);
-                self->filename = g_strdup (filename);
-                read_mo_file (self);
+                if (!g_file_test (filename, G_FILE_TEST_EXISTS)) {
+                        g_set_error (error,
+                                     MO_FILE_ERROR,
+                                     MO_FILE_NO_SUCH_FILE_ERROR,
+                                     "'%s' does not exist.", filename,
+                                     NULL);
+                        g_assert (error == NULL || *error != NULL);
+                        self->filename = NULL;
+                } else {
+                        self->filename = g_strdup (filename);
+                        if (!read_mo_file (self, error))
+                                clear_file (self);
+                }
                 g_object_notify_by_pspec (G_OBJECT (self),
                                           obj_properties[PROP_FILENAME]);
         }
+
+        return self->filename != NULL;
 }
 
 const gchar *
 mo_file_get_name (MoFile *self)
 {
-        g_return_val_if_fail (MO_IS_FILE (self), NULL);
+        if (!MO_IS_FILE (self))
+                return NULL;
 
         return self->filename;
 }
@@ -225,6 +275,8 @@ mo_file_get_name (MoFile *self)
 
 static inline guint32 hashpjw (const gchar *str_param)
 {
+        g_return_val_if_fail (str_param != NULL, 0);
+
         guint32 hval = 0;
         guint32 g;
         const gchar *s = str_param;
@@ -245,6 +297,8 @@ static inline guint32 hashpjw (const gchar *str_param)
 static inline guint32
 get_uint32 (const gchar *data, size_t offset, gboolean swap)
 {
+        g_return_val_if_fail (data != NULL, 0);
+
         guint32 *ptr = (guint32 *) (data + offset);
         if (swap)
                 return GUINT32_SWAP_LE_BE (*ptr);
@@ -256,6 +310,8 @@ static inline const char *
 get_string (const gchar *data, guint32 offset, guint32 index, gboolean swapped)
 {
 
+        g_return_val_if_fail (data != NULL, NULL);
+
         size_t s_offset = get_uint32 (data,
                         offset + index * sizeof (char *) + sizeof (guint32),
                         swapped);
@@ -266,6 +322,10 @@ static const gchar *
 get_translation (MoFile *self,
                  const gchar *trans)
 {
+        g_return_val_if_fail (MO_IS_FILE (self), NULL);
+        g_return_val_if_fail (self->filename != NULL, NULL);
+        g_return_val_if_fail (self->header.hash_tab_offset != 0, NULL);
+
         unsigned long V = hashpjw (trans);
         int S = self->header.hash_tab_size;
 
@@ -276,7 +336,7 @@ get_translation (MoFile *self,
         int idx;
 
         while (1) {
-                unsigned int index = get_uint32 (self->mmaped_file,
+                unsigned int index = get_uint32 (self->mmapped_file,
                                                  self->header.hash_tab_offset +
                                                         sizeof (guint32) * hash_cursor,
                                                  self->swapped);
@@ -285,7 +345,7 @@ get_translation (MoFile *self,
 
                 index--;
 
-                if (g_strcmp0 (get_string (self->mmaped_file,
+                if (g_strcmp0 (get_string (self->mmapped_file,
                                            self->header.orig_tab_offset,
                                            index,
                                            self->swapped),
@@ -301,7 +361,7 @@ get_translation (MoFile *self,
                         return NULL;
         }
 
-        return get_string (self->mmaped_file,
+        return get_string (self->mmapped_file,
                            self->header.trans_tab_offset,
                            idx,
                            self->swapped);
@@ -310,8 +370,8 @@ get_translation (MoFile *self,
 gchar *
 mo_file_get_translation (MoFile *self, const gchar *str)
 {
-        g_return_val_if_fail (MO_IS_FILE (self), NULL);
-        g_return_val_if_fail (str != NULL, NULL);
+        if (!MO_IS_FILE (self) || !str || !self->filename)
+                return NULL;
 
         gboolean found;
 
@@ -328,4 +388,14 @@ mo_file_get_translation (MoFile *self, const gchar *str)
         }
 
         return g_strdup (trans);
+}
+
+MoFile *
+mo_file_new (const gchar *filename)
+{
+        return MO_FILE (g_initable_new (MO_TYPE_FILE,
+                                        NULL,
+                                        NULL,
+                                        "filename", filename,
+                                        NULL));
 }

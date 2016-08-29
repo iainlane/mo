@@ -28,12 +28,18 @@ int
 main (int argc     G_GNUC_UNUSED,
       char *argv[] G_GNUC_UNUSED)
 {
-        MoFile *mofile = mo_file_new ("/usr/share/locale-langpack/fr/LC_MESSAGES/apt.mo");
+        GError *err = NULL;
+
+        g_autoptr(MoFile) mofile = mo_file_new ("/usr/share/locale-langpack/fr/LC_MESSAGES/apt.mo");
 
         g_autofree gchar *trans = mo_file_get_translation (mofile,
                                                            "edit the source information file");
 
-        g_printf ("%s\n", trans);
-
-        g_object_unref (mofile);
+        if (!mofile) {
+                g_printf ("couldn't make object\n");
+        } else if (!trans) {
+                g_printf ("couldn't get translation\n");
+        } else {
+                g_printf ("%s\n", trans);
+        }
 }

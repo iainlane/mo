@@ -29,7 +29,7 @@ AS_IF([test "x$enable_werror" = "xyes"], [
        AX_APPEND_COMPILE_FLAGS([-Werror])
 ])
 
-PKG_CHECK_MODULES(GLIB, gobject-2.0 glib-2.0)
+PKG_CHECK_MODULES(GLIB, gobject-2.0 glib-2.0 gio-2.0)
 
 AC_CONFIG_HEADERS(config.h)
 AC_CONFIG_FILES([
