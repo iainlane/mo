@@ -29,7 +29,8 @@ AC_ARG_ENABLE([werror],
 ]))
 
 AS_IF([test "x$enable_werror" = "xyes"], [
-       AX_APPEND_COMPILE_FLAGS([-Werror])
+# format-extra-args seems messed up on gcc with g_set_error
+       AX_APPEND_COMPILE_FLAGS([-Werror -Wno-error=format-extra-args])
 ])
 
 PKG_CHECK_MODULES(GLIB, gobject-2.0 >= $GLIB_REQUIRED_VERSION \
