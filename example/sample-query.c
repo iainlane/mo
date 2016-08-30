@@ -24,6 +24,8 @@
 
 #include <glib/gprintf.h>
 
+#include <stdlib.h>
+
 int
 main (int argc     G_GNUC_UNUSED,
       char *argv[] G_GNUC_UNUSED)
@@ -35,9 +37,13 @@ main (int argc     G_GNUC_UNUSED,
 
         if (!mofile) {
                 g_printf ("couldn't make object\n");
+                return EXIT_FAILURE;
         } else if (!trans) {
                 g_printf ("couldn't get translation\n");
+                return EXIT_FAILURE;
         } else {
                 g_printf ("%s\n", trans);
         }
+
+        return EXIT_SUCCESS;
 }
