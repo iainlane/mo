@@ -1,0 +1,22 @@
+#
+# Docker file for AppStream Generator CI tests
+#
+FROM ubuntu:16.04
+
+# prepare
+RUN apt-get update -qq
+
+# install build essentials
+RUN apt-get install -yq git build-essential clang
+
+# install dependencies
+RUN apt-get install -yq --no-install-recommends \
+    autoconf-archive \
+    gnome-common \
+    language-pack-de-base \
+    libglib2.0-dev
+
+# build & install the current Git snapshot of mo
+RUN mkdir /build
+
+WORKDIR /build

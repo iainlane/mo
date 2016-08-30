@@ -4,6 +4,9 @@ AM_INIT_AUTOMAKE([foreign no-dist-gzip dist-xz subdir-objects])
 AM_SILENT_RULES([yes])
 AC_CONFIG_MACRO_DIR([m4])
 
+# Required version
+GLIB_REQUIRED_VERSION=2.43.4
+
 LT_INIT
 
 AC_PROG_CC
@@ -29,7 +32,9 @@ AS_IF([test "x$enable_werror" = "xyes"], [
        AX_APPEND_COMPILE_FLAGS([-Werror])
 ])
 
-PKG_CHECK_MODULES(GLIB, gobject-2.0 glib-2.0 gio-2.0)
+PKG_CHECK_MODULES(GLIB, gobject-2.0 >= $GLIB_REQUIRED_VERSION \
+                        glib-2.0 >= $GLIB_REQUIRED_VERSION \
+                        gio-2.0 >= $GLIB_REQUIRED_VERSION)
 
 AC_CONFIG_HEADERS(config.h)
 AC_CONFIG_FILES([
