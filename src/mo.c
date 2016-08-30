@@ -57,8 +57,9 @@ enum {
 
 static GParamSpec *obj_properties[N_PROPERTIES] = { NULL, };
 
-/* forward declaration */
+/* forward declarations */
 static void mo_file_initable_init (GInitableIface *iface);
+static gboolean read_mo_file (MoFile *self, GError **error);
 
 G_DEFINE_TYPE_WITH_CODE (MoFile, mo_file, G_TYPE_OBJECT,
                          G_IMPLEMENT_INTERFACE (G_TYPE_INITABLE,
@@ -101,9 +102,7 @@ mo_file_set_property (GObject      *object,
     switch (property_id)
     {
         case PROP_FILENAME:
-            mo_file_set_name (self,
-                              (gchar *) g_value_get_string (value),
-                              NULL);
+            self->filename = g_value_dup_string (value);
             break;
 
         default:
@@ -147,14 +146,30 @@ mo_file_finalize (GObject *object)
 static gboolean
 mo_file_initable_init_real (GInitable *init,
                             GCancellable *cancellable G_GNUC_UNUSED,
-                            GError **error G_GNUC_UNUSED)
+                            GError **error)
 {
-        /* XXX set the error, but how do we get it from _set_name? */
-        MoFile *mofile;
+        MoFile *self;
 
-        mofile = MO_FILE (init);
+        if (!MO_IS_FILE (init))
+                return FALSE;
 
-        return mofile->filename != NULL;
+        self = MO_FILE (init);
+
+        if (!self->filename)
+                return FALSE;
+
+        if (!g_file_test (self->filename, G_FILE_TEST_EXISTS) ||
+            !g_file_test (self->filename, G_FILE_TEST_IS_REGULAR)) {
+                g_set_error (error,
+                             MO_FILE_ERROR,
+                             MO_FILE_NO_SUCH_FILE_ERROR,
+                             "'%s' does not exist.", self->filename,
+                             NULL);
+                g_assert (error == NULL || *error != NULL);
+                return FALSE;
+        }
+
+        return read_mo_file (self, error);
 }
 
 static void
@@ -178,7 +193,7 @@ mo_file_class_init (MoFileClass *klass)
                                      "Filename",
                                      "Name of the .mo file to load.",
                                      NULL  /* default value */,
-                                     G_PARAM_CONSTRUCT |
+                                     G_PARAM_CONSTRUCT_ONLY |
                                      G_PARAM_READWRITE |
                                      G_PARAM_STATIC_STRINGS);
 
@@ -277,35 +292,6 @@ fail:
         memset (&self->header, 0, sizeof (MoFileHeader));
         return FALSE;
 
-}
-
-gboolean
-mo_file_set_name (MoFile *self, const gchar *filename, GError **error)
-{
-        if (!MO_IS_FILE (self) || !filename)
-                return FALSE;
-
-        if (self->filename != filename) {
-                clear_file (self);
-                if (!g_file_test (filename, G_FILE_TEST_EXISTS) ||
-                    !g_file_test (filename, G_FILE_TEST_IS_REGULAR)) {
-                        g_set_error (error,
-                                     MO_FILE_ERROR,
-                                     MO_FILE_NO_SUCH_FILE_ERROR,
-                                     "'%s' does not exist.", filename,
-                                     NULL);
-                        g_assert (error == NULL || *error != NULL);
-                        self->filename = NULL;
-                } else {
-                        self->filename = g_strdup (filename);
-                        if (!read_mo_file (self, error))
-                                clear_file (self);
-                }
-                g_object_notify_by_pspec (G_OBJECT (self),
-                                          obj_properties[PROP_FILENAME]);
-        }
-
-        return self->filename != NULL;
 }
 
 const gchar *
@@ -439,11 +425,11 @@ mo_file_get_translation (MoFile *self, const gchar *str)
 }
 
 MoFile *
-mo_file_new (const gchar *filename)
+mo_file_new (const gchar *filename, GError **error)
 {
         return MO_FILE (g_initable_new (MO_TYPE_FILE,
                                         NULL,
-                                        NULL,
+                                        error,
                                         "filename", filename,
                                         NULL));
 }

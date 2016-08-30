@@ -28,7 +28,7 @@ int
 main (int argc     G_GNUC_UNUSED,
       char *argv[] G_GNUC_UNUSED)
 {
-        g_autoptr(MoFile) mofile = mo_file_new ("/usr/share/locale/de/LC_MESSAGES/apt.mo");
+        g_autoptr(MoFile) mofile = mo_file_new ("/usr/share/locale/de/LC_MESSAGES/apt.mo", NULL);
 
         g_autofree gchar *trans = mo_file_get_translation (mofile,
                                                            "edit the source information file");

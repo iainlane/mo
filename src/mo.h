@@ -38,8 +38,7 @@ G_DECLARE_FINAL_TYPE (MoFile, mo_file, MO, FILE, GObject)
 
 #define MO_FILE_ERROR mo_file_error_quark ()
 
-MoFile *mo_file_new (const gchar *filename);
-gboolean mo_file_set_name (MoFile *self, const gchar *filename, GError **error);
+MoFile *mo_file_new (const gchar *filename, GError **err);
 const gchar *mo_file_get_name (MoFile *self);
 
 gchar *mo_file_get_translation (MoFile *self, const gchar *str);
