@@ -9,3 +9,5 @@ slow and thread-unsafe procedures involving generating locales and setting
 environment variables. Sometimes you have the file to hand and just want to get
 at its contents without going through all that fuss.  This library will help
 you do that.
+
+[![Build Status](https://travis-ci.org/iainlane/mo.svg?branch=master)](https://travis-ci.org/iainlane/mo)
