@@ -206,9 +206,9 @@ static void
 mo_file_init (MoFile *self)
 {
         self->translations_cache = g_hash_table_new_full (g_str_hash /* owned */,
-                                                          g_str_equal /* pointer to the mmapped file */,
+                                                          g_str_equal,
                                                           g_free,
-                                                          NULL);
+                                                          NULL); /* pointer to the mmapped file */
 }
 
 static gboolean
