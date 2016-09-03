@@ -1,3 +1,5 @@
+SUBDIRS = . docs
+
 ACLOCAL_AMFLAGS = -I m4
 
 lib_LTLIBRARIES = src/libmo.la
@@ -24,3 +26,11 @@ example_sample_query_CFLAGS = -I$(top_srcdir)/src \
 
 example_sample_query_LDADD = $(GLIB_LIBS) \
                              $(top_builddir)/src/libmo.la
+
+EXTRA_DIST = gtk-doc.make
+
+DISTCLEANFILES = gtk-doc.make
+
+MAINTAINERCLEANFILES = gtk-doc.make
+
+DISTCHECK_CONFIGURE_FLAGS = --enable-gtk-doc

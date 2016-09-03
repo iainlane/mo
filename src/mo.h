@@ -27,6 +27,13 @@
 
 G_BEGIN_DECLS
 
+/**
+ * MoFileError:
+ * @MO_FILE_INVALID_FILE_ERROR: The file exists but could not be parsed. It is not a valid .mo file.
+ * @MO_FILE_NO_SUCH_FILE_ERROR: The file did not exist.
+ *
+ * Error codes for operations on #MoFiles.
+ */
 typedef enum {
         MO_FILE_INVALID_FILE_ERROR,
         MO_FILE_NO_SUCH_FILE_ERROR,
@@ -38,7 +45,7 @@ G_DECLARE_FINAL_TYPE (MoFile, mo_file, MO, FILE, GObject)
 
 #define MO_FILE_ERROR mo_file_error_quark ()
 
-MoFile *mo_file_new (const gchar *filename, GError **err);
+MoFile *mo_file_new (const gchar *filename, GError **error);
 const gchar *mo_file_get_name (MoFile *self);
 
 gchar *mo_file_get_translation (MoFile *self, const gchar *str);

@@ -1,4 +1,8 @@
-AC_INIT([mo], [0.1])
+m4_define([mo_version_major],[0])
+m4_define([mo_version_minor],[1])
+m4_define([mo_version_micro],[0])
+
+AC_INIT([mo], [mo_version_major.mo_version_minor.mo_version_micro])
 
 AM_INIT_AUTOMAKE([foreign no-dist-gzip dist-xz subdir-objects])
 AM_SILENT_RULES([yes])
@@ -37,9 +41,22 @@ PKG_CHECK_MODULES(GLIB, gobject-2.0 >= $GLIB_REQUIRED_VERSION \
                         glib-2.0 >= $GLIB_REQUIRED_VERSION \
                         gio-2.0 >= $GLIB_REQUIRED_VERSION)
 
+GTK_DOC_CHECK([1.14],[--flavour no-tmpl])
+
+MO_VERSION_MAJOR=mo_version_major
+MO_VERSION_MINOR=mo_version_minor
+MO_VERSION_MICRO=mo_version_micro
+
+AC_SUBST([MO_VERSION_MAJOR])
+AC_SUBST([MO_VERSION_MINOR])
+AC_SUBST([MO_VERSION_MICRO])
+
 AC_CONFIG_HEADERS(config.h)
 AC_CONFIG_FILES([
     Makefile
+    docs/Makefile
+    docs/reference/Makefile
+    docs/reference/libmo/Makefile
 ])
 
 AC_ENABLE_SHARED
