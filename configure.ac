@@ -8,6 +8,7 @@ m4_define([mo_api_version_major],[0])
 m4_define([mo_api_version_minor],[1])
 
 AC_INIT([mo],[mo_version_major.mo_version_minor.mo_version_micro])
+AX_IS_RELEASE([git-directory])
 
 AM_INIT_AUTOMAKE([foreign no-dist-gzip dist-xz tar-pax subdir-objects])
 AM_SILENT_RULES([yes])
@@ -20,27 +21,16 @@ LT_INIT
 
 AC_PROG_CC
 
+AX_GENERATE_CHANGELOG
+
 AX_CFLAGS_WARN_ALL
-AX_APPEND_COMPILE_FLAGS([-std=c99 \
-                         -Wall \
-                         -Wextra \
-                         -pedantic \
-                         -Werror=implicit-function-declaration \
-                         -Wshadow \
-                         -Wstrict-overflow \
-                         -fno-strict-aliasing],
-                         [CFLAGS])
 
-AC_ARG_ENABLE([werror],
-              AS_HELP_STRING([--enable-werror], [Turn on -Werror and some other
-                              compile flags that are useful during development
-                              but annoying for release builds.
-]))
-
-AS_IF([test "x$enable_werror" = "xyes"], [
-# format-extra-args seems messed up on gcc with g_set_error
-       AX_APPEND_COMPILE_FLAGS([-Werror -Wno-error=format-extra-args])
-])
+AX_COMPILER_FLAGS([WARN_CFLAGS],
+                  [WARN_LDFLAGS],
+                  [$ax_is_release],
+                   [-Werror=implicit-function-declaration \
+                    -Wstrict-overflow \
+                    -Wno-format-extra-args])
 
 PKG_CHECK_MODULES(GLIB, gobject-2.0 >= $GLIB_REQUIRED_VERSION \
                         glib-2.0 >= $GLIB_REQUIRED_VERSION \

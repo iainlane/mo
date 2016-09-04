@@ -100,7 +100,7 @@ G_DEFINE_TYPE_WITH_CODE (MoFile, mo_file, G_TYPE_OBJECT,
                                                 mo_file_initable_init))
 
 GQuark
-mo_file_error_quark ()
+mo_file_error_quark (void)
 {
         return g_quark_from_static_string ("mo-file-error-quark");
 }
@@ -253,10 +253,10 @@ mo_file_init (MoFile *self)
 static gboolean
 read_mo_file (MoFile *self, GError **error)
 {
-        g_return_val_if_fail (MO_IS_FILE (self), FALSE);
-
         int fd;
         struct stat sb;
+
+        g_return_val_if_fail (MO_IS_FILE (self), FALSE);
 
         fd = open (self->filename, O_RDONLY);
 
@@ -356,11 +356,13 @@ mo_file_get_name (MoFile *self)
 
 static inline guint32 hashpjw (const gchar *str_param)
 {
-        g_return_val_if_fail (str_param != NULL, 0);
-
         guint32 hval = 0;
         guint32 g;
-        const gchar *s = str_param;
+        const gchar *s;
+
+        g_return_val_if_fail (str_param != NULL, 0);
+
+        s = str_param;
 
         while (*s) {
                 hval <<= 4;
@@ -378,9 +380,10 @@ static inline guint32 hashpjw (const gchar *str_param)
 static inline guint32
 get_uint32 (const gchar *data, size_t offset, gboolean swap)
 {
+        guint32 *ptr = (guint32 *) (data + offset);
+
         g_return_val_if_fail (data != NULL, 0);
 
-        guint32 *ptr = (guint32 *) (data + offset);
         if (swap)
                 return GUINT32_SWAP_LE_BE (*ptr);
         else
@@ -390,12 +393,13 @@ get_uint32 (const gchar *data, size_t offset, gboolean swap)
 static inline const char *
 get_string (const gchar *data, guint32 offset, guint32 index, gboolean swapped)
 {
+        size_t s_offset;
 
         g_return_val_if_fail (data != NULL, NULL);
 
-        size_t s_offset = get_uint32 (data,
-                        offset + index * sizeof (char *) + sizeof (guint32),
-                        swapped);
+        s_offset = get_uint32 (data,
+                   offset + index * sizeof (char *) + sizeof (guint32),
+                   swapped);
         return data + s_offset;
 }
 
@@ -403,24 +407,26 @@ static const gchar *
 get_translation (MoFile *self,
                  const gchar *trans)
 {
+        int S, hash_cursor, orig_hash_cursor, increment, idx;
+        unsigned int index;
+        unsigned long V;
+
         g_return_val_if_fail (MO_IS_FILE (self), NULL);
         g_return_val_if_fail (self->filename != NULL, NULL);
         g_return_val_if_fail (self->header.hash_tab_offset != 0, NULL);
 
-        unsigned long V = hashpjw (trans);
-        int S = self->header.hash_tab_size;
+        V = hashpjw (trans);
+        S = self->header.hash_tab_size;
 
-        int hash_cursor = V % S;
-        int orig_hash_cursor = hash_cursor;
-        int increment = 1 + (V % (S - 2));
-
-        int idx;
+        hash_cursor = V % S;
+        orig_hash_cursor = hash_cursor;
+        increment = 1 + (V % (S - 2));
 
         while (1) {
-                unsigned int index = get_uint32 (self->mmapped_file,
-                                                 self->header.hash_tab_offset +
-                                                        sizeof (guint32) * hash_cursor,
-                                                 self->swapped);
+                index = get_uint32 (self->mmapped_file,
+                                       self->header.hash_tab_offset +
+                                              sizeof (guint32) * hash_cursor,
+                                       self->swapped);
                 if (index == 0)
                         return NULL;
 
@@ -460,12 +466,11 @@ get_translation (MoFile *self,
 gchar *
 mo_file_get_translation (MoFile *self, const gchar *str)
 {
+        gboolean found;
+        const gchar *trans;
+
         if (!MO_IS_FILE (self) || !str || !self->filename || self->header.nstrings == 0)
                 return NULL;
-
-        gboolean found;
-
-        const gchar *trans;
 
         found = g_hash_table_lookup_extended (self->translations_cache,
                                               str,

@@ -14,12 +14,17 @@ lib_LTLIBRARIES = src/libmo.la
 
 src_libmo_la_SOURCES = $(libmo_sources)
 
-src_libmo_la_CFLAGS = $(GLIB_CFLAGS)
+src_libmo_la_CFLAGS = $(GLIB_CFLAGS) \
+                      $(WARN_CFLAGS) \
+                      $(AM_CFLAGS)
 
-src_libmo_la_LIBADD = $(GLIB_LIBS)
+src_libmo_la_LIBADD = $(GLIB_LIBS) \
+                      $(AM_LIBADD)
 
 src_libmo_la_LDFLAGS = -export-symbols-regex '^mo_' \
-                       -version-info $(MO_LT_VERSION)
+                       -version-info $(MO_LT_VERSION) \
+                       $(WARN_LDFLAGS) \
+                       $(AM_LDFLAGS)
 
 pkginclude_HEADERS = $(libmo_public_headers)
 
@@ -30,10 +35,14 @@ noinst_PROGRAMS = example/sample-query
 example_sample_query_SOURCES = example/sample-query.c
 example_sample_query_CFLAGS = -I$(top_srcdir)/src \
                               $(GLIB_CFLAGS) \
+                              $(WARN_CFLAGS) \
                               $(AM_CFLAGS)
 
 example_sample_query_LDADD = $(GLIB_LIBS) \
                              $(top_builddir)/src/libmo.la
+
+example_sample_query_LDFLAGS = $(WARN_LDFLAGS) \
+                               $(AM_LDFLAGS)
 
 # introspection
 -include $(INTROSPECTION_MAKEFILE)

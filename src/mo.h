@@ -59,6 +59,7 @@ G_DECLARE_FINAL_TYPE (MoFile, mo_file, MO, FILE, GObject)
  * The error domain for #MoFile errors.
  */
 #define MO_FILE_ERROR (mo_file_error_quark ())
+GQuark mo_file_error_quark (void) G_GNUC_CONST;
 
 MoFile *mo_file_new (const gchar *filename, GError **error);
 const gchar *mo_file_get_name (MoFile *self);
