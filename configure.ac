@@ -41,6 +41,15 @@ PKG_CHECK_MODULES(GLIB, gobject-2.0 >= $GLIB_REQUIRED_VERSION \
                         glib-2.0 >= $GLIB_REQUIRED_VERSION \
                         gio-2.0 >= $GLIB_REQUIRED_VERSION)
 
+# Before making a release, the MO_LT_VERSION string should be modified. The string is of the form c:r:a. Follow these instructions sequentially:
+#
+#  1. If the library source code has changed at all since the last update, then increment revision (‘c:r:a’ becomes ‘c:r+1:a’).
+#  2. If any interfaces have been added, removed, or changed since the last update, increment current, and set revision to 0.
+#  3. If any interfaces have been added since the last public release, then increment age.
+#  4. If any interfaces have been removed or changed since the last public release, then set age to 0.
+MO_LT_VERSION=0:0:0
+AC_SUBST([MO_LT_VERSION])
+
 GTK_DOC_CHECK([1.14],[--flavour no-tmpl])
 
 MO_VERSION_MAJOR=mo_version_major

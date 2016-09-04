@@ -11,7 +11,7 @@ src_libmo_la_CFLAGS = $(GLIB_CFLAGS)
 src_libmo_la_LIBADD = $(GLIB_LIBS)
 
 src_libmo_la_LDFLAGS = -export-symbols-regex '^mo_' \
-                       -version-info 0:0:0
+                       -version-info $(MO_LT_VERSION)
 
 pkginclude_HEADERS = src/mo.h
 
