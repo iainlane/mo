@@ -1,10 +1,12 @@
+AC_PREREQ([2.69])
+
 m4_define([mo_version_major],[0])
 m4_define([mo_version_minor],[1])
 m4_define([mo_version_micro],[0])
 
-AC_INIT([mo], [mo_version_major.mo_version_minor.mo_version_micro])
+AC_INIT([mo],[mo_version_major.mo_version_minor.mo_version_micro])
 
-AM_INIT_AUTOMAKE([foreign no-dist-gzip dist-xz subdir-objects])
+AM_INIT_AUTOMAKE([foreign no-dist-gzip dist-xz tar-pax subdir-objects])
 AM_SILENT_RULES([yes])
 AC_CONFIG_MACRO_DIR([m4])
 
