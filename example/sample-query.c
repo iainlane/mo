@@ -30,19 +30,23 @@ int
 main (int argc     G_GNUC_UNUSED,
       char *argv[] G_GNUC_UNUSED)
 {
-        g_autoptr(MoFile) mofile = mo_file_new ("/usr/share/locale/de/LC_MESSAGES/apt.mo", NULL);
+        GError *err = NULL;
 
-        g_autofree gchar *trans = mo_file_get_translation (mofile,
-                                                           "edit the source information file");
+        g_autoptr(MoFile) mofile = mo_file_new ("/usr/share/locale/de/LC_MESSAGES/apt.mo", &err);
+
 
         if (!mofile) {
-                g_printf ("couldn't make object\n");
-                return EXIT_FAILURE;
-        } else if (!trans) {
-                g_printf ("couldn't get translation\n");
+                g_printerr ("couldn't get translation: %s\n", err->message);
                 return EXIT_FAILURE;
         } else {
-                g_printf ("%s\n", trans);
+                g_autofree gchar *trans = mo_file_get_translation (mofile,
+                                                                   "edit the source information file");
+                if (trans) {
+                        g_printf ("%s\n", trans);
+                } else {
+                        g_printerr ("no translation found\n");
+                        return EXIT_FAILURE;
+                }
         }
 
         return EXIT_SUCCESS;

@@ -39,11 +39,26 @@ typedef enum {
         MO_FILE_NO_SUCH_FILE_ERROR,
 } MoFileError;
 
-#define MO_TYPE_FILE mo_file_get_type ()
+/**
+ * MO_TYPE_FILE:
+ *
+ * #GType for #MoFile.
+ */
+#define MO_TYPE_FILE (mo_file_get_type ())
 
+/**
+ * MoFile:
+ *
+ * All the data fields in the #MoFile class are private and should never be accessed directly.
+ */
 G_DECLARE_FINAL_TYPE (MoFile, mo_file, MO, FILE, GObject)
 
-#define MO_FILE_ERROR mo_file_error_quark ()
+/**
+ * MO_FILE_ERROR:
+ *
+ * The error domain for #MoFile errors.
+ */
+#define MO_FILE_ERROR (mo_file_error_quark ())
 
 MoFile *mo_file_new (const gchar *filename, GError **error);
 const gchar *mo_file_get_name (MoFile *self);
