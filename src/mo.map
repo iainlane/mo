@@ -1,0 +1,6 @@
+LIBMO_0_1 {
+        global:
+                mo_*;
+        local:
+                *;
+};

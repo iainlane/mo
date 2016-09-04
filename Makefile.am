@@ -21,7 +21,7 @@ src_libmo_la_CFLAGS = $(GLIB_CFLAGS) \
 src_libmo_la_LIBADD = $(GLIB_LIBS) \
                       $(AM_LIBADD)
 
-src_libmo_la_LDFLAGS = -export-symbols-regex '^mo_' \
+src_libmo_la_LDFLAGS = -Wl,--version-script=src/mo.map \
                        -version-info $(MO_LT_VERSION) \
                        $(WARN_LDFLAGS) \
                        $(AM_LDFLAGS)

@@ -1,0 +1,2 @@
+<!-- for meson -->
+<!ENTITY package_version "@MO_VERSION@">
