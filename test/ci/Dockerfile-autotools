@@ -1,6 +1,7 @@
 #
-# Docker file for AppStream Generator CI tests
+# Docker file for libmo tests
 #
+
 FROM ubuntu:16.04
 
 # prepare

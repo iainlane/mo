@@ -10,7 +10,16 @@ compiler:
   - clang
   - gcc
 
-before_script:
-  - docker build -t mo -f test/ci/Dockerfile .
+env:
+  - BUILD=autotools
+  - BUILD=meson
 
-script: docker run -t -e CC=$CC -v $(pwd):/build mo ./test/ci/build.sh
+matrix:
+  allow_failures:
+  - env: BUILD=meson
+    compiler: clang
+
+before_script:
+  - docker build -t mo -f test/ci/Dockerfile-$BUILD .
+
+script: docker run -t -e BUILD=$BUILD -e CC=$CC -v $(pwd):/build mo ./test/ci/build.sh

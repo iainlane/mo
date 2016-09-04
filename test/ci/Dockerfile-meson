@@ -1,0 +1,25 @@
+#
+# Docker file for libmo tests
+#
+
+# the meson build requires a newer meson and glib
+FROM ubuntu:yakkety
+
+# prepare
+RUN apt-get update -qq
+
+# install build essentials
+RUN apt-get install -yq git build-essential clang
+
+# install dependencies
+RUN apt-get install -yq --no-install-recommends \
+    gobject-introspection \
+    gtk-doc-tools \
+    language-pack-de-base \
+    libglib2.0-dev \
+    meson
+
+# build & install the current Git snapshot of mo
+RUN mkdir /build
+
+WORKDIR /build
