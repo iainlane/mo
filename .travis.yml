@@ -22,4 +22,4 @@ matrix:
 before_script:
   - docker build -t mo -f test/ci/Dockerfile-$BUILD .
 
-script: docker run -t -e BUILD=$BUILD -e CC=$CC -v $(pwd):/build mo ./test/ci/build.sh
+script: docker run -t -e BUILD=$BUILD -e CC=$CC -v $(pwd):/build mo ./test/ci/build-$BUILD.sh
