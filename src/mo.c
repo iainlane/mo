@@ -380,14 +380,19 @@ static inline guint32 hashpjw (const gchar *str_param)
 static inline guint32
 get_uint32 (const gchar *data, size_t offset, gboolean swap)
 {
-        guint32 *ptr = (guint32 *) (data + offset);
+        guint32 b0, b1, b2, b3, res;
 
-        g_return_val_if_fail (data != NULL, 0);
+        b0 = *(guint8 *) (data + offset);
+        b1 = *(guint8 *) (data + offset + sizeof (guint8));
+        b2 = *(guint8 *) (data + offset + sizeof (guint8) * 2);
+        b3 = *(guint8 *) (data + offset + sizeof (guint8) * 3);
+
+        res = b0 | (b1 << 8) | (b2 << 16) | (b3 << 24);
 
         if (swap)
-                return GUINT32_SWAP_LE_BE (*ptr);
+                return GUINT32_SWAP_LE_BE (res);
         else
-                return *ptr;
+                return res;
 }
 
 static inline const char *
@@ -398,8 +403,8 @@ get_string (const gchar *data, guint32 offset, guint32 index, gboolean swapped)
         g_return_val_if_fail (data != NULL, NULL);
 
         s_offset = get_uint32 (data,
-                   offset + index * sizeof (char *) + sizeof (guint32),
-                   swapped);
+                               offset + index * sizeof (char *) + sizeof (guint32),
+                               swapped);
         return data + s_offset;
 }
 
@@ -424,9 +429,9 @@ get_translation (MoFile *self,
 
         while (1) {
                 index = get_uint32 (self->mmapped_file,
-                                       self->header.hash_tab_offset +
-                                              sizeof (guint32) * hash_cursor,
-                                       self->swapped);
+                                    self->header.hash_tab_offset +
+                                            sizeof (guint32) * hash_cursor,
+                                    self->swapped);
                 if (index == 0)
                         return NULL;
 
