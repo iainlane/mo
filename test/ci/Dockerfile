@@ -13,6 +13,8 @@ RUN apt-get install -yq git build-essential clang
 RUN apt-get install -yq --no-install-recommends \
     autoconf-archive \
     gnome-common \
+    gobject-introspection \
+    gtk-doc-tools \
     language-pack-de-base \
     libglib2.0-dev
 
