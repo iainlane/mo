@@ -258,8 +258,6 @@ read_mo_file (MoFile *self, GError **error)
 
         g_return_val_if_fail (MO_IS_FILE (self), FALSE);
 
-        fd = open (self->filename, O_RDONLY);
-
         if ((fd = open (self->filename, O_RDONLY)) < 0) {
                 g_set_error (error,
                              MO_FILE_ERROR,
