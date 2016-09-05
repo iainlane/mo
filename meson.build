@@ -24,6 +24,8 @@ lt_version = '@0@.@1@.@2@'.format (lt_current,
                                    lt_revision,
                                    lt_age)
 
+c_args = []
+
 foreach argument : ['-fno-strict-aliasing',
                     '-pedantic',
                     '-Wall',
@@ -69,13 +71,11 @@ foreach argument : ['-fno-strict-aliasing',
                     '-Wno-error=pedantic',
                     '-Wno-error=unused-parameter']
         if cc.has_argument (argument)
-                add_global_arguments (argument,
-                                      language : 'c')
+                c_args += [argument]
         endif
 endforeach
 
-add_global_link_arguments (['-Wl,--fatal-warnings'],
-                           language : 'c')
+link_args = ['-Wl,--fatal-warnings']
 
 glib_required_version = '2.43.4'
 
@@ -100,8 +100,9 @@ libmo = library ('mo',
                  version : lt_version,
                  dependencies : deps,
                  include_directories : include_directories ('@0@/../src/'.format (meson.current_build_dir())),
-                 link_args : ['-Wl,--no-undefined', vflag],
+                 link_args : ['-Wl,--no-undefined', vflag] + link_args,
                  link_depends : mapfile,
+                 c_args : c_args,
                  install : true)
 
 # the example program
@@ -110,6 +111,8 @@ example = executable ('sample-query',
                       'example/sample-query.c',
                       include_directories : include_directories ('@0@/../src/'.format (meson.current_build_dir())),
                       dependencies : deps,
+                      c_args : c_args,
+                      link_args : link_args,
                       link_with : libmo)
 
 # the introspection files
