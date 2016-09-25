@@ -75,6 +75,8 @@ foreach argument : ['-fno-strict-aliasing',
         endif
 endforeach
 
+c_args += ['-DMO_COMPILATION']
+
 link_args = ['-Wl,--fatal-warnings']
 
 glib_required_version = '2.43.4'
@@ -85,13 +87,13 @@ gio     = dependency ('gio-2.0',     version : '>= @0@'.format(glib_required_ver
 
 # the main library
 
-libmo_headers = ['src/mo.h']
+libmo_headers = ['libmo/mo.h', 'libmo/mofile.h']
 install_headers (libmo_headers,
                  subdir : 'libmo')
 
-libmo_sources = ['src/mo.c']
+libmo_sources = ['libmo/mofile.c']
 deps = [gobject, glib, gio]
-mapfile = 'src/mo.map'
+mapfile = 'libmo/mo.map'
 
 vflag = '-Wl,--version-script,@0@/@1@'.format (meson.current_source_dir (), mapfile)
 libmo = library ('mo',
@@ -99,7 +101,7 @@ libmo = library ('mo',
                  soversion : lt_current - lt_age,
                  version : lt_version,
                  dependencies : deps,
-                 include_directories : include_directories ('@0@/src/'.format (meson.current_source_dir())),
+                 include_directories : include_directories (meson.current_source_dir()),
                  link_args : ['-Wl,--no-undefined', vflag] + link_args,
                  link_depends : mapfile,
                  c_args : c_args,
@@ -109,7 +111,7 @@ libmo = library ('mo',
 
 example = executable ('sample-query',
                       'example/sample-query.c',
-                      include_directories : include_directories ('@0@/src/'.format (meson.current_source_dir())),
+                      include_directories : include_directories (meson.current_source_dir()),
                       dependencies : deps,
                       c_args : c_args,
                       link_args : link_args,

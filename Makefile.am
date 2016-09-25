@@ -7,39 +7,44 @@ DISTCHECK_CONFIGURE_FLAGS = --disable-silent-rules
 EXTRA_DIST =
 MAINTAINERCLEANFILES =
 
-libmo_sources = src/mo.c
-libmo_public_headers = src/mo.h
+libmo_sources = libmo/mofile.c
+libmo_public_headers = libmo/mo.h \
+                       libmo/mofile.h
 
-lib_LTLIBRARIES = src/libmo.la
+lib_LTLIBRARIES = libmo/libmo.la
 
-src_libmo_la_SOURCES = $(libmo_sources)
+libmo_libmo_la_SOURCES = $(libmo_sources)
 
-src_libmo_la_CFLAGS = $(GLIB_CFLAGS) \
+libmo_libmo_la_CPPFLAGS = -DMO_COMPILATION \
+                        $(AM_CPPFLAGS)
+
+libmo_libmo_la_CFLAGS = $(GLIB_CFLAGS) \
                       $(WARN_CFLAGS) \
                       $(AM_CFLAGS)
 
-src_libmo_la_LIBADD = $(GLIB_LIBS) \
+libmo_libmo_la_LIBADD = $(GLIB_LIBS) \
                       $(AM_LIBADD)
 
-src_libmo_la_LDFLAGS = -Wl,--version-script=src/mo.map \
+libmo_libmo_la_LDFLAGS = -Wl,--version-script=libmo/mo.map \
                        -version-info $(MO_LT_VERSION) \
                        $(WARN_LDFLAGS) \
                        $(AM_LDFLAGS)
 
-pkginclude_HEADERS = $(libmo_public_headers)
+libmoincdir = $(includedir)/libmo
+libmoinc_HEADERS = $(libmo_public_headers)
 
 # Example program
 
 noinst_PROGRAMS = example/sample-query
 
 example_sample_query_SOURCES = example/sample-query.c
-example_sample_query_CFLAGS = -I$(top_srcdir)/src \
+example_sample_query_CFLAGS = -I$(top_srcdir) \
                               $(GLIB_CFLAGS) \
                               $(WARN_CFLAGS) \
                               $(AM_CFLAGS)
 
 example_sample_query_LDADD = $(GLIB_LIBS) \
-                             $(top_builddir)/src/libmo.la
+                             $(top_builddir)/libmo/libmo.la
 
 example_sample_query_LDFLAGS = $(WARN_LDFLAGS) \
                                $(AM_LDFLAGS)
@@ -53,21 +58,21 @@ DISTCHECK_CONFIGURE_FLAGS += --enable-introspection
 EXTRA_DIST += m4/introspection.m4
 
 if HAVE_INTROSPECTION
-src/Mo-@MO_API_VERSION_MAJOR@.@MO_API_VERSION_MINOR@.gir: src/libmo.la
-src_Mo_@MO_API_VERSION_MAJOR@_@MO_API_VERSION_MINOR@_gir_INCLUDES = GObject-2.0 GLib-2.0
-src_Mo_@MO_API_VERSION_MAJOR@_@MO_API_VERSION_MINOR@_gir_CFLAGS = $(MO_CFLAGS) $(GLIB_CFLAGS) $(gdata_libgdata_la_CPPFLAGS)
-src_Mo_@MO_API_VERSION_MAJOR@_@MO_API_VERSION_MINOR@_gir_LIBS = src/libmo.la
-src_Mo_@MO_API_VERSION_MAJOR@_@MO_API_VERSION_MINOR@_gir_FILES = $(libmo_sources) $(libmo_public_headers)
-src_Mo_@MO_API_VERSION_MAJOR@_@MO_API_VERSION_MINOR@_gir_NAMESPACE = Mo
-src_Mo_@MO_API_VERSION_MAJOR@_@MO_API_VERSION_MINOR@_gir_EXPORT_PACKAGES = libmo
-src_Mo_@MO_API_VERSION_MAJOR@_@MO_API_VERSION_MINOR@_gir_SCANNERFLAGS = \
+libmo/Mo-@MO_API_VERSION_MAJOR@.@MO_API_VERSION_MINOR@.gir: libmo/libmo.la
+libmo_Mo_@MO_API_VERSION_MAJOR@_@MO_API_VERSION_MINOR@_gir_INCLUDES = GObject-2.0 GLib-2.0
+libmo_Mo_@MO_API_VERSION_MAJOR@_@MO_API_VERSION_MINOR@_gir_CFLAGS = $(MO_CFLAGS) $(GLIB_CFLAGS) $(gdata_libgdata_la_CPPFLAGS)
+libmo_Mo_@MO_API_VERSION_MAJOR@_@MO_API_VERSION_MINOR@_gir_LIBS = libmo/libmo.la
+libmo_Mo_@MO_API_VERSION_MAJOR@_@MO_API_VERSION_MINOR@_gir_FILES = $(libmo_sources) $(libmo_public_headers)
+libmo_Mo_@MO_API_VERSION_MAJOR@_@MO_API_VERSION_MINOR@_gir_NAMESPACE = Mo
+libmo_Mo_@MO_API_VERSION_MAJOR@_@MO_API_VERSION_MINOR@_gir_EXPORT_PACKAGES = libmo
+libmo_Mo_@MO_API_VERSION_MAJOR@_@MO_API_VERSION_MINOR@_gir_SCANNERFLAGS = \
         --nsversion=$(MO_API_VERSION) \
         --symbol-prefix=mo \
-        --c-include="src/mo.h" \
+        --c-include="libmo/mo.h" \
         $(WARN_SCANNERFLAGS) \
         $(NULL)
 
-INTROSPECTION_GIRS += src/Mo-$(MO_API_VERSION).gir
+INTROSPECTION_GIRS += libmo/Mo-$(MO_API_VERSION).gir
 
 girdir = $(datadir)/gir-1.0
 gir_DATA = $(INTROSPECTION_GIRS)

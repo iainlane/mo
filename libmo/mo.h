@@ -20,34 +20,11 @@
  * USA
  */
 
-#include <libmo/mo.h>
+#pragma once
 
-#include <glib/gprintf.h>
+/*< private >*/
+#define _IN_MO_H
 
-#include <stdlib.h>
+#include <libmo/mofile.h>
 
-int
-main (int argc     G_GNUC_UNUSED,
-      char *argv[] G_GNUC_UNUSED)
-{
-        GError *err = NULL;
-
-        g_autoptr(MoFile) mofile = mo_file_new ("/usr/share/locale/de/LC_MESSAGES/apt.mo", &err);
-
-
-        if (!mofile) {
-                g_printerr ("couldn't get translation: %s\n", err->message);
-                return EXIT_FAILURE;
-        } else {
-                g_autofree gchar *trans = mo_file_get_translation (mofile,
-                                                                   "edit the source information file");
-                if (trans) {
-                        g_printf ("%s\n", trans);
-                } else {
-                        g_printerr ("no translation found\n");
-                        return EXIT_FAILURE;
-                }
-        }
-
-        return EXIT_SUCCESS;
-}
+#undef _IN_MO_H

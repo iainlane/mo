@@ -25,6 +25,10 @@
 #include <gio/gio.h>
 #include <glib-object.h>
 
+#if !(defined(_IN_MO_H) || defined(MO_COMPILATION))
+#error "mofile.h must not be included individually, include mo.h instead"
+#endif
+
 G_BEGIN_DECLS
 
 /**

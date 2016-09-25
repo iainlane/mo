@@ -16,7 +16,7 @@ DOC_MAIN_SGML_FILE=$(DOC_MODULE)-docs.xml
 # gtk-doc will search all .c and .h files beneath these paths
 # for inline comments documenting functions and macros.
 # e.g. DOC_SOURCE_DIR=$(top_srcdir)/gtk $(top_srcdir)/gdk
-DOC_SOURCE_DIR=$(top_srcdir)/src
+DOC_SOURCE_DIR=$(top_srcdir)/libmo
 
 # Extra options to pass to gtkdoc-scangobj. Normally not needed.
 SCANGOBJ_OPTIONS=
@@ -39,8 +39,8 @@ FIXXREF_OPTIONS=
 # Used for dependencies. The docs will be rebuilt if any of these change.
 # e.g. HFILE_GLOB=$(top_srcdir)/gtk/*.h
 # e.g. CFILE_GLOB=$(top_srcdir)/gtk/*.c
-HFILE_GLOB=$(top_srcdir)/src/*.h
-CFILE_GLOB=$(top_srcdir)/src/*.c
+HFILE_GLOB=$(top_srcdir)/libmo/*.h
+CFILE_GLOB=$(top_srcdir)/libmo/*.c
 
 # Extra header to include when scanning, which are not under DOC_SOURCE_DIR
 # e.g. EXTRA_HFILES=$(top_srcdir}/contrib/extra.h
@@ -67,8 +67,8 @@ expand_content_files=
 # signals and properties.
 # e.g. GTKDOC_CFLAGS=-I$(top_srcdir) -I$(top_builddir) $(GTK_DEBUG_FLAGS)
 # e.g. GTKDOC_LIBS=$(top_builddir)/gtk/$(gtktargetlib)
-GTKDOC_CFLAGS=-I$(top_srcdir)/src -I$(top_builddir)/src
-GTKDOC_LIBS=$(top_builddir)/src/libmo.la
+GTKDOC_CFLAGS=-I$(top_libmodir)/libmo -I$(top_builddir)/libmo
+GTKDOC_LIBS=$(top_builddir)/libmo/libmo.la
 
 # This includes the standard gtk-doc make rules, copied by gtkdocize.
 include $(top_srcdir)/gtk-doc.make
