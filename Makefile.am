@@ -16,14 +16,14 @@ lib_LTLIBRARIES = libmo/libmo.la
 libmo_libmo_la_SOURCES = $(libmo_sources)
 
 libmo_libmo_la_CPPFLAGS = -DMO_COMPILATION \
-                        $(AM_CPPFLAGS)
+                          $(AM_CPPFLAGS)
 
 libmo_libmo_la_CFLAGS = $(GLIB_CFLAGS) \
-                      $(WARN_CFLAGS) \
-                      $(AM_CFLAGS)
+                        $(WARN_CFLAGS) \
+                        $(AM_CFLAGS)
 
 libmo_libmo_la_LIBADD = $(GLIB_LIBS) \
-                      $(AM_LIBADD)
+                        $(AM_LIBADD)
 
 libmo_libmo_la_LDFLAGS = -Wl,--version-script=libmo/mo.map \
                        -version-info $(MO_LT_VERSION) \
@@ -70,6 +70,7 @@ libmo_Mo_@MO_API_VERSION_MAJOR@_@MO_API_VERSION_MINOR@_gir_SCANNERFLAGS = \
         --symbol-prefix=mo \
         --c-include="libmo/mo.h" \
         $(WARN_SCANNERFLAGS) \
+        -DMO_COMPILATION \
         $(NULL)
 
 INTROSPECTION_GIRS += libmo/Mo-$(MO_API_VERSION).gir

@@ -75,7 +75,9 @@ foreach argument : ['-fno-strict-aliasing',
         endif
 endforeach
 
-c_args += ['-DMO_COMPILATION']
+mo_compilation = '-DMO_COMPILATION'
+
+c_args += [mo_compilation]
 
 link_args = ['-Wl,--fatal-warnings']
 
@@ -132,7 +134,8 @@ if girscanner.found ()
                             identifier_prefix : 'Mo',
                             export_packages : 'libmo',
                             includes : ['GObject-2.0', 'Gio-2.0', 'GLib-2.0'],
-                            install : true
+                            install : true,
+                            extra_args : mo_compilation
         )
 endif
 
