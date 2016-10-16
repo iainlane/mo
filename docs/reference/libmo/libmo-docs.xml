@@ -19,6 +19,7 @@
   <chapter>
     <title>Core API</title>
         <xi:include href="xml/mofile.xml"/>
+        <xi:include href="xml/mogroup.xml"/>
 
   </chapter>
   <!--

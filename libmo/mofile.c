@@ -173,6 +173,7 @@ mo_file_finalize (GObject *object)
         MoFile *self = MO_FILE (object);
 
         clear_file (self);
+        g_clear_pointer (&self->translations_cache, g_hash_table_destroy);
 
         G_OBJECT_CLASS (mo_file_parent_class)->finalize (object);
 }

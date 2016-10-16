@@ -89,11 +89,11 @@ gio     = dependency ('gio-2.0',     version : '>= @0@'.format(glib_required_ver
 
 # the main library
 
-libmo_headers = ['libmo/mo.h', 'libmo/mofile.h']
+libmo_headers = ['libmo/mo.h', 'libmo/mofile.h', 'libmo/mogroup.h']
 install_headers (libmo_headers,
                  subdir : 'libmo')
 
-libmo_sources = ['libmo/mofile.c']
+libmo_sources = ['libmo/mofile.c', 'libmo/mogroup.c']
 deps = [gobject, glib, gio]
 mapfile = 'libmo/mo.map'
 

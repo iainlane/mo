@@ -26,28 +26,109 @@
 
 #include <stdlib.h>
 
+static gchar *
+read_one_translation (MoFile *mofile, GError *err)
+{
+        if (!mofile) {
+                g_printerr ("couldn't get translation: %s\n", err->message);
+                g_clear_error (&err);
+                return NULL;
+        }
+
+        return mo_file_get_translation (mofile,
+                                        "edit the source information file");
+}
+
+static int
+read_all_translations (void)
+{
+        GError *err = NULL;
+        g_autoptr(GList) domains_head = NULL;
+        GList * domains;
+
+        g_autoptr(MoGroup) mogroup = mo_group_new ("apt", &err);
+
+        if (!mogroup) {
+                g_printerr ("couldn't create MoGroup: %s\n", err->message);
+                g_clear_error (&err);
+
+                return EXIT_FAILURE;
+        }
+
+        domains = domains_head = mo_group_get_languages (mogroup);
+
+        while (domains) {
+                g_autofree gchar *translation;
+                g_autoptr(MoFile) mofile = mo_group_get_mo_file (mogroup,
+                                                                 (gchar *) domains->data);
+                translation = read_one_translation (mofile, err);
+
+                if (translation) {
+                        g_printf ("%s: '%s'\n",
+                                  (gchar *) domains->data,
+                                  translation);
+                } else {
+                        g_printf ("%s: no translation found\n", (gchar *) domains->data);
+                }
+
+                domains = domains->next;
+        }
+
+        return EXIT_SUCCESS;
+}
+
+static int
+read_all_translations2 (void)
+{
+        GError *err = NULL;
+        g_autoptr(GHashTable) ht = NULL;
+        GHashTableIter iter;
+        void *key, *value;
+
+        g_autoptr(MoGroup) mogroup = mo_group_new ("apt", &err);
+
+        if (!mogroup) {
+                g_printerr ("couldn't create MoGroup: %s\n", err->message);
+                g_clear_error (&err);
+
+                return EXIT_FAILURE;
+        }
+
+        ht = mo_group_get_translations (mogroup,
+                                        "edit the source information file");
+
+        g_hash_table_iter_init (&iter, ht);
+
+        while (g_hash_table_iter_next (&iter, &key, &value))
+                g_printf ("%s: '%s'\n", (gchar *) key, (gchar *) value);
+
+        return EXIT_SUCCESS;
+}
+
 int
 main (int argc     G_GNUC_UNUSED,
       char *argv[] G_GNUC_UNUSED)
 {
+        g_autofree gchar *one = NULL;
+        int all, all2;
+
         GError *err = NULL;
 
         g_autoptr(MoFile) mofile = mo_file_new ("/usr/share/locale/de/LC_MESSAGES/apt.mo", &err);
 
+        g_print ("Reading just the one translation...\n");
+        one = read_one_translation (mofile, err);
+        if (one)
+                g_printf ("%s\n", one);
 
-        if (!mofile) {
-                g_printerr ("couldn't get translation: %s\n", err->message);
+        g_print ("Reading all translations, by iterating the domains...\n");
+        all = read_all_translations ();
+
+        g_print ("Reading all translations directly...\n");
+        all2 = read_all_translations2 ();
+
+        if (!one || all == EXIT_FAILURE || all2 == EXIT_FAILURE)
                 return EXIT_FAILURE;
-        } else {
-                g_autofree gchar *trans = mo_file_get_translation (mofile,
-                                                                   "edit the source information file");
-                if (trans) {
-                        g_printf ("%s\n", trans);
-                } else {
-                        g_printerr ("no translation found\n");
-                        return EXIT_FAILURE;
-                }
-        }
 
         return EXIT_SUCCESS;
 }

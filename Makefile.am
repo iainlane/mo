@@ -7,9 +7,11 @@ DISTCHECK_CONFIGURE_FLAGS = --disable-silent-rules
 EXTRA_DIST =
 MAINTAINERCLEANFILES =
 
-libmo_sources = libmo/mofile.c
+libmo_sources = libmo/mofile.c \
+                libmo/mogroup.c
 libmo_public_headers = libmo/mo.h \
-                       libmo/mofile.h
+                       libmo/mofile.h \
+                       libmo/mogroup.h
 
 lib_LTLIBRARIES = libmo/libmo.la
 
@@ -86,8 +88,6 @@ endif
 
 # gtk-doc
 EXTRA_DIST += gtk-doc.make
-
-DISTCLEANFILES += gtk-doc.make
 
 MAINTAINERCLEANFILES += gtk-doc.make
 

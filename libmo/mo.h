@@ -26,5 +26,6 @@
 #define _IN_MO_H
 
 #include <libmo/mofile.h>
+#include <libmo/mogroup.h>
 
 #undef _IN_MO_H
