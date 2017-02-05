@@ -490,6 +490,46 @@ mo_file_get_translation (MoFile *self, const gchar *str)
 }
 
 /**
+ * mo_file_get_translations:
+ * @self: An initialised #MoFile.
+ *
+ * Retrieve all translations.
+ *
+ * Returns: (element-type gchar* gchar*) (transfer full): A #GHashTable
+ * containing a mapping from original to translated strings.
+ */
+GHashTable *
+mo_file_get_translations (MoFile *self)
+{
+        const gchar *orig, *trans;
+        GHashTable *ret;
+
+        if (!MO_IS_FILE (self) || !self->filename)
+                return NULL;
+
+        ret = g_hash_table_new_full (g_str_hash,
+                                     g_str_equal,
+                                     g_free,
+                                     g_free);
+
+        for (unsigned int i = 0; i < self->header.nstrings; ++i) {
+                orig = get_string (self->mmapped_file,
+                                   self->header.orig_tab_offset,
+                                   i,
+                                   self->swapped);
+                trans = get_string (self->mmapped_file,
+                                    self->header.trans_tab_offset,
+                                    i,
+                                    self->swapped);
+                g_hash_table_insert (ret,
+                                     g_strdup (orig),
+                                     g_strdup (trans));
+        }
+
+        return ret;
+}
+
+/**
  * mo_file_new:
  * @filename: Filename of the .mo file to work with.
  * @error: Return location for a GError, or NULL.

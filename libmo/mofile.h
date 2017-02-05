@@ -70,4 +70,6 @@ const gchar *mo_file_get_name (MoFile *self);
 
 gchar *mo_file_get_translation (MoFile *self, const gchar *str);
 
+GHashTable *mo_file_get_translations (MoFile *self);
+
 G_END_DECLS
