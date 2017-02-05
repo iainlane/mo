@@ -37,7 +37,8 @@ libmoinc_HEADERS = $(libmo_public_headers)
 
 # Example program
 
-noinst_PROGRAMS = example/sample-query
+noinst_PROGRAMS = example/sample-query \
+                  example/dump
 
 example_sample_query_SOURCES = example/sample-query.c
 example_sample_query_CFLAGS = -I$(top_srcdir) \
@@ -50,6 +51,19 @@ example_sample_query_LDADD = $(GLIB_LIBS) \
 
 example_sample_query_LDFLAGS = $(WARN_LDFLAGS) \
                                $(AM_LDFLAGS)
+
+example_dump_SOURCES = example/dump.c
+example_dump_CFLAGS = -I$(top_srcdir) \
+                      $(GLIB_CFLAGS) \
+                      $(WARN_CFLAGS) \
+                      $(AM_CFLAGS)
+
+example_dump_LDADD = $(GLIB_LIBS) \
+                     $(top_builddir)/libmo/libmo.la
+
+example_dump_LDFLAGS = $(WARN_LDFLAGS) \
+                       $(AM_LDFLAGS)
+
 
 # introspection
 -include $(INTROSPECTION_MAKEFILE)

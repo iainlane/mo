@@ -119,6 +119,14 @@ example = executable ('sample-query',
                       link_args : link_args,
                       link_with : libmo)
 
+example = executable ('dump',
+                      'example/dump.c',
+                      include_directories : include_directories (meson.current_source_dir()),
+                      dependencies : deps,
+                      c_args : c_args,
+                      link_args : link_args,
+                      link_with : libmo)
+
 # the introspection files
 girscanner = find_program ('g-ir-scanner',
                            required: false)
