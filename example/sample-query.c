@@ -27,16 +27,17 @@
 #include <stdlib.h>
 
 static gchar *
-read_one_translation (MoFile *mofile, GError *err)
+read_one_translation (MoFile *mofile, GError **err)
 {
         if (!mofile) {
-                g_printerr ("couldn't get translation: %s\n", err->message);
-                g_clear_error (&err);
+                g_printerr ("couldn't get translation: %s\n", (*err)->message);
+                g_clear_error (err);
                 return NULL;
         }
 
         return mo_file_get_translation (mofile,
-                                        "edit the source information file");
+                                        "edit the source information file",
+                                        err);
 }
 
 static int
@@ -61,14 +62,15 @@ read_all_translations (void)
                 g_autofree gchar *translation;
                 g_autoptr(MoFile) mofile = mo_group_get_mo_file (mogroup,
                                                                  (gchar *) domains->data);
-                translation = read_one_translation (mofile, err);
+                translation = read_one_translation (mofile, &err);
 
                 if (translation) {
                         g_printf ("%s: '%s'\n",
                                   (gchar *) domains->data,
                                   translation);
                 } else {
-                        g_printf ("%s: no translation found\n", (gchar *) domains->data);
+                        g_printf ("%s: no translation found (%s)\n", (gchar *) domains->data, err->message);
+                        g_clear_error (&err);
                 }
 
                 domains = domains->next;
@@ -117,7 +119,7 @@ main (int argc     G_GNUC_UNUSED,
         g_autoptr(MoFile) mofile = mo_file_new ("/usr/share/locale/de/LC_MESSAGES/apt.mo", &err);
 
         g_print ("Reading just the one translation...\n");
-        one = read_one_translation (mofile, err);
+        one = read_one_translation (mofile, &err);
         if (one)
                 g_printf ("%s\n", one);
 

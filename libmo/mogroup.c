@@ -397,7 +397,8 @@ find_translation (gpointer key,
         MoFile *mofile = value;
         gchar *translation;
 
-        translation = mo_file_get_translation (mofile, data->translation);
+        /* Ignoring errors - sensible? */
+        translation = mo_file_get_translation (mofile, data->translation, NULL);
 
         if (!translation)
                 return;
@@ -450,7 +451,8 @@ mo_group_get_translations (MoGroup *self,
 gchar *
 mo_group_get_translation (MoGroup *self,
                           const gchar *locale,
-                          const gchar *translation)
+                          const gchar *translation,
+                          GError **err)
 {
         g_autoptr(MoFile) mofile = NULL;
 
@@ -462,7 +464,7 @@ mo_group_get_translation (MoGroup *self,
         if (!mofile)
                 return NULL;
 
-        return mo_file_get_translation (mofile, translation);
+        return mo_file_get_translation (mofile, translation, err);
 }
 
 /**

@@ -63,7 +63,13 @@ main (int argc, char *argv[])
 
         g_print ("Dumping...\n");
 
-        ht = mo_file_get_translations (mofile);
+        ht = mo_file_get_translations (mofile, &err);
+
+        if (!ht) {
+                g_printerr ("Error: File '%s' could not be read: %s\n", filename, err->message);
+                g_error_free (err);
+                return EXIT_FAILURE;
+        }
 
         g_hash_table_iter_init (&iter, ht);
 

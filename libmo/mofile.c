@@ -22,6 +22,8 @@
 
 #include "mofile.h"
 
+#include <glib/gprintf.h>
+
 #include <errno.h>
 #include <fcntl.h>
 #include <string.h>
@@ -71,6 +73,7 @@ typedef struct {
         guint32 trans_tab_offset;
         guint32 hash_tab_size;
         guint32 hash_tab_offset;
+        /* there are also 'sysdep' strings, which we don't handle currently */
 } MoFileHeader;
 
 struct _MoFile {
@@ -376,10 +379,43 @@ static inline guint32 hashpjw (const gchar *str_param)
         return hval;
 }
 
+static inline size_t
+osum (size_t a, size_t b)
+{
+        size_t sum = a + b;
+
+        return sum >= a ? sum : G_MAXSIZE;
+}
+
+static inline size_t
+osum3 (size_t a, size_t b, size_t c)
+{
+        return osum (osum (a, b), c);
+}
+
 static inline guint32
-get_uint32 (const gchar *data, size_t offset, gboolean swap)
+get_uint32 (const gchar *data,
+            size_t offset,
+            gboolean swap,
+            off_t length,
+            GError **error)
 {
         guint32 b0, b1, b2, b3, res;
+        size_t sum;
+
+        sum = osum (offset, sizeof(guint8) * 4);
+
+        g_return_val_if_fail (length >= 0, G_MAXUINT32);
+
+        if (sum == G_MAXSIZE || sum > (size_t) length) {
+                g_printf("ajoij\n");
+                g_set_error (error,
+                             MO_FILE_ERROR,
+                             MO_FILE_INVALID_FILE_ERROR,
+                             "File is truncated.",
+                             NULL);
+                return G_MAXUINT32;
+        }
 
         b0 = *(guint8 *) (data + offset);
         b1 = *(guint8 *) (data + offset + sizeof (guint8));
@@ -389,31 +425,87 @@ get_uint32 (const gchar *data, size_t offset, gboolean swap)
         res = b0 | (b1 << 8) | (b2 << 16) | (b3 << 24);
 
         if (swap)
-                return GUINT32_SWAP_LE_BE (res);
-        else
-                return res;
+                res = GUINT32_SWAP_LE_BE (res);
+
+        if (res == G_MAXUINT32) {
+                g_printf("joijn\n");
+                g_set_error (error,
+                             MO_FILE_ERROR,
+                             MO_FILE_INVALID_FILE_ERROR,
+                             "File is truncated.",
+                             NULL);
+        }
+
+        return res;
 }
 
 static inline const char *
-get_string (const gchar *data, guint32 offset, guint32 index, gboolean swapped)
+get_string (const gchar *data,
+            guint32 offset,
+            guint32 index,
+            gboolean swapped,
+            off_t length,
+            size_t *lengthp,
+            GError **error)
 {
-        size_t s_offset;
+        size_t string_length, string_offset, string_end;
 
         g_return_val_if_fail (data != NULL, NULL);
+        g_return_val_if_fail (length >= 0, NULL);
 
-        s_offset = get_uint32 (data,
-                               offset + index * sizeof (char *) + sizeof (guint32),
-                               swapped);
-        return data + s_offset;
+        string_length = get_uint32 (data, offset + index * sizeof (char *), swapped, length, error);
+        if (string_length == G_MAXUINT) {
+                return NULL;
+        }
+
+        string_offset = get_uint32 (data,
+                                    offset + index * sizeof (char *) + sizeof (guint32),
+                                    swapped,
+                                    length,
+                                    error);
+        if (string_offset == G_MAXUINT) {
+                return NULL;
+        }
+
+        /* See if we're overflowed or pointed off the end of the file */
+        string_end = osum3 (string_offset, string_length, 1);
+
+        if (string_end == G_MAXSIZE || string_end > (size_t) length) {
+                g_set_error (error,
+                             MO_FILE_ERROR,
+                             MO_FILE_INVALID_FILE_ERROR,
+                             "File is truncated.",
+                             NULL);
+                return NULL;
+        }
+
+        if (data[string_offset + string_length] != '\0') {
+                g_set_error (error,
+                             MO_FILE_ERROR,
+                             MO_FILE_INVALID_FILE_ERROR,
+                             "File contains a non-NUL terminated string.",
+                             NULL);
+                return NULL;
+        }
+
+        /* We think we're ok now */
+        if (lengthp)
+                *lengthp = string_length + 1;
+
+        return data + string_offset;
 }
 
 static const gchar *
 get_translation (MoFile *self,
-                 const gchar *trans)
+                 const gchar *trans,
+                 GError **error)
 {
         int S, hash_cursor, orig_hash_cursor, increment, idx;
         unsigned int index;
         unsigned long V;
+        const gchar *str;
+
+        GError *err = NULL;
 
         g_return_val_if_fail (MO_IS_FILE (self), NULL);
         g_return_val_if_fail (self->filename != NULL, NULL);
@@ -430,17 +522,38 @@ get_translation (MoFile *self,
                 index = get_uint32 (self->mmapped_file,
                                     self->header.hash_tab_offset +
                                             sizeof (guint32) * hash_cursor,
-                                    self->swapped);
-                if (index == 0)
+                                    self->swapped,
+                                    self->length,
+                                    error);
+                if (index == 0) {
+                        g_set_error (error,
+                                     MO_FILE_ERROR,
+                                     MO_FILE_STRING_NOT_FOUND_ERROR,
+                                     "Translation for '%s' not found in '%s'",
+                                     trans,
+                                     self->filename,
+                                     NULL);
+                        return NULL;
+                }
+
+                if (index == G_MAXUINT32)
                         return NULL;
 
                 index--;
 
-                if (g_strcmp0 (get_string (self->mmapped_file,
-                                           self->header.orig_tab_offset,
-                                           index,
-                                           self->swapped),
-                               trans) == 0) {
+                str = get_string (self->mmapped_file,
+                                  self->header.orig_tab_offset,
+                                  index,
+                                  self->swapped,
+                                  self->length,
+                                  NULL, /* length */
+                                  &err);
+                if (err) {
+                        g_propagate_error (error, err);
+                        return NULL;
+                }
+
+                if (g_strcmp0 (str, trans) == 0) {
                         idx = index;
                         break;
                 }
@@ -448,33 +561,62 @@ get_translation (MoFile *self,
                 hash_cursor += increment;
                 hash_cursor %= S;
 
-                if (hash_cursor == orig_hash_cursor)
+                if (hash_cursor == orig_hash_cursor) {
+                        g_set_error (error,
+                                     MO_FILE_ERROR,
+                                     MO_FILE_STRING_NOT_FOUND_ERROR,
+                                     "Translation for '%s' not found in '%s'",
+                                     trans,
+                                     self->filename,
+                                     NULL);
                         return NULL;
+                }
         }
 
         return get_string (self->mmapped_file,
                            self->header.trans_tab_offset,
                            idx,
-                           self->swapped);
+                           self->swapped,
+                           self->length,
+                           NULL, /* length */
+                           error);
 }
 
 /**
  * mo_file_get_translation:
  * @self: An initialised #MoFile.
  * @str: Untranslated (in the 'C' locale) string.
+ * @error: Return location for a GError, or NULL.
  *
  * Retrieve the translated value of a string.
  *
- * Returns: the translated string, or NULL if a translation is not found.
+ * Returns (transfer full): the translated string, or NULL if a translation is
+ * not found. If NULL is returned, @error will be set.
  */
 gchar *
-mo_file_get_translation (MoFile *self, const gchar *str)
+mo_file_get_translation (MoFile *self, const gchar *str, GError **error)
 {
         gboolean found;
         const gchar *trans;
 
-        if (!MO_IS_FILE (self) || !str || !self->filename || self->header.nstrings == 0)
+        if (!MO_IS_FILE (self) || !str || !self->filename) {
+                g_set_error (error,
+                             MO_FILE_ERROR,
+                             MO_FILE_INVALID_FILE_ERROR,
+                             "The MoFile object is invalid.",
+                             NULL);
                 return NULL;
+        }
+
+        if (self->header.nstrings == 0) {
+                g_set_error (error,
+                             MO_FILE_ERROR,
+                             MO_FILE_INVALID_FILE_ERROR,
+                             "'%s' contains no strings",
+                             self->filename,
+                             NULL);
+                return NULL;
+        }
 
         found = g_hash_table_lookup_extended (self->translations_cache,
                                               str,
@@ -482,7 +624,7 @@ mo_file_get_translation (MoFile *self, const gchar *str)
                                               (gpointer) &trans);
 
         if (!found) {
-                trans = get_translation (self, str);
+                trans = get_translation (self, str, error);
                 g_hash_table_insert (self->translations_cache, g_strdup (str), (gchar *) trans);
         }
 
@@ -499,7 +641,7 @@ mo_file_get_translation (MoFile *self, const gchar *str)
  * containing a mapping from original to translated strings.
  */
 GHashTable *
-mo_file_get_translations (MoFile *self)
+mo_file_get_translations (MoFile *self, GError **error)
 {
         const gchar *orig, *trans;
         GHashTable *ret;
@@ -516,11 +658,29 @@ mo_file_get_translations (MoFile *self)
                 orig = get_string (self->mmapped_file,
                                    self->header.orig_tab_offset,
                                    i,
-                                   self->swapped);
+                                   self->swapped,
+                                   self->length,
+                                   NULL,
+                                   error);
+
+                if (!orig) {
+                        g_hash_table_unref (ret);
+                        return NULL;
+                }
+
                 trans = get_string (self->mmapped_file,
                                     self->header.trans_tab_offset,
                                     i,
-                                    self->swapped);
+                                    self->swapped,
+                                    self->length,
+                                    NULL,
+                                    error);
+
+                if (!trans) {
+                        g_hash_table_unref (ret);
+                        return NULL;
+                }
+
                 g_hash_table_insert (ret,
                                      g_strdup (orig),
                                      g_strdup (trans));

@@ -41,6 +41,7 @@ G_BEGIN_DECLS
 typedef enum {
         MO_FILE_INVALID_FILE_ERROR,
         MO_FILE_NO_SUCH_FILE_ERROR,
+        MO_FILE_STRING_NOT_FOUND_ERROR,
 } MoFileError;
 
 /**
@@ -68,8 +69,8 @@ GQuark mo_file_error_quark (void) G_GNUC_CONST;
 MoFile *mo_file_new (const gchar *filename, GError **error);
 const gchar *mo_file_get_name (MoFile *self);
 
-gchar *mo_file_get_translation (MoFile *self, const gchar *str);
+gchar *mo_file_get_translation (MoFile *self, const gchar *str, GError **error);
 
-GHashTable *mo_file_get_translations (MoFile *self);
+GHashTable *mo_file_get_translations (MoFile *self, GError **error);
 
 G_END_DECLS

@@ -77,6 +77,7 @@ GHashTable *mo_group_get_translations (MoGroup *self, const gchar *translation);
 MoFile *mo_group_get_mo_file (MoGroup *self, const gchar *locale);
 gchar *mo_group_get_translation (MoGroup *self,
                                  const gchar *locale,
-                                 const gchar *translation);
+                                 const gchar *translation,
+                                 GError **err);
 
 G_END_DECLS
