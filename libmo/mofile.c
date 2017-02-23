@@ -332,7 +332,6 @@ read_mo_file (MoFile *self, GError **error)
 fail:
         memset (&self->header, 0, sizeof (MoFileHeader));
         return FALSE;
-
 }
 
 /**
@@ -408,7 +407,6 @@ get_uint32 (const gchar *data,
         g_return_val_if_fail (length >= 0, G_MAXUINT32);
 
         if (sum == G_MAXSIZE || sum > (size_t) length) {
-                g_printf("ajoij\n");
                 g_set_error (error,
                              MO_FILE_ERROR,
                              MO_FILE_INVALID_FILE_ERROR,
@@ -428,7 +426,6 @@ get_uint32 (const gchar *data,
                 res = GUINT32_SWAP_LE_BE (res);
 
         if (res == G_MAXUINT32) {
-                g_printf("joijn\n");
                 g_set_error (error,
                              MO_FILE_ERROR,
                              MO_FILE_INVALID_FILE_ERROR,
