@@ -112,11 +112,14 @@ main (int argc     G_GNUC_UNUSED,
       char *argv[] G_GNUC_UNUSED)
 {
         g_autofree gchar *one = NULL;
+        g_autofree gchar *contents = NULL;
+        gsize length;
         int all, all2;
 
         GError *err = NULL;
 
         g_autoptr(MoFile) mofile = mo_file_new ("/usr/share/locale/de/LC_MESSAGES/apt.mo", &err);
+        g_autoptr(MoFile) mofile2 = NULL;
 
         g_print ("Reading just the one translation...\n");
         one = read_one_translation (mofile, &err);
@@ -128,6 +131,17 @@ main (int argc     G_GNUC_UNUSED,
 
         g_print ("Reading all translations directly...\n");
         all2 = read_all_translations2 ();
+
+        g_print ("Reading the file in first...\n");
+        g_file_get_contents("/usr/share/locale/de/LC_MESSAGES/apt.mo", &contents, &length, &err);
+
+        mofile2 = mo_file_new_from_bytes (g_bytes_new(contents, length), &err);
+
+        one = read_one_translation (mofile2, &err);
+        if (err)
+                g_printf("omg %s\n", err->message);
+        if (one)
+                g_printf ("%s\n", one);
 
         if (!one || all == EXIT_FAILURE || all2 == EXIT_FAILURE)
                 return EXIT_FAILURE;
