@@ -103,7 +103,7 @@ libmo = library ('mo',
                  soversion : lt_current - lt_age,
                  version : lt_version,
                  dependencies : deps,
-                 include_directories : include_directories (meson.current_source_dir()),
+                 include_directories : include_directories ('.'),
                  link_args : ['-Wl,--no-undefined', vflag] + link_args,
                  link_depends : mapfile,
                  c_args : c_args,
@@ -113,7 +113,7 @@ libmo = library ('mo',
 
 example = executable ('sample-query',
                       'example/sample-query.c',
-                      include_directories : include_directories (meson.current_source_dir()),
+                      include_directories : include_directories ('.'),
                       dependencies : deps,
                       c_args : c_args,
                       link_args : link_args,
@@ -121,7 +121,7 @@ example = executable ('sample-query',
 
 example = executable ('dump',
                       'example/dump.c',
-                      include_directories : include_directories (meson.current_source_dir()),
+                      include_directories : include_directories ('.'),
                       dependencies : deps,
                       c_args : c_args,
                       link_args : link_args,
@@ -130,8 +130,9 @@ example = executable ('dump',
 # the introspection files
 girscanner = find_program ('g-ir-scanner',
                            required: false)
+gi = dependency ('gobject-introspection-1.0', required: false)
 
-if girscanner.found ()
+if girscanner.found () and gi.found ()
         introspection_sources = libmo_headers + libmo_sources
 
         gnome.generate_gir (libmo,
